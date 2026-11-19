@@ -1,0 +1,27 @@
+import express from "express";
+import helmet from "helmet";
+import cors from "cors";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
+import auth from "./routes/auth.js";
+import society from "./routes/society.js";
+import visitors from "./routes/visitors.js";
+import complaints from "./routes/complaints.js";
+import notices from "./routes/notices.js";
+import { notFound, errorHandler } from "./middleware/error.js";
+
+const app = express();
+app.set("trust proxy", 1);
+app.use(helmet(), compression(), cookieParser(), express.json({ limit: "100kb" }));
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use("/api/v1", rateLimit({ windowMs: 60_000, limit: 300 }));
+app.use("/api/v1/auth/login", rateLimit({ windowMs: 15 * 60_000, limit: 20 }));
+app.get("/health", (req, res) => res.json({ ok: true }));
+app.use("/api/v1/auth", auth);
+app.use("/api/v1/visitors", visitors);
+app.use("/api/v1/complaints", complaints);
+app.use("/api/v1/notices", notices);
+app.use("/api/v1", society);
+app.use(notFound, errorHandler);
+export default app;
